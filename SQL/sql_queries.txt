@@ -108,3 +108,102 @@ SELECT
 FROM all_jobs
 LEFT JOIN skills_job_dim ON all_jobs.job_id = skills_job_dim.job_id
 LEFT JOIN skills_dim ON skills_job_dim.skill_id = skills_dim.skill_id;
+
+Practice Problem 8
+
+# Solution 1: derived table
+
+SELECT 
+    all_jobs_q1.job_title_short,
+    all_jobs_q1.job_location,
+    all_jobs_q1.job_via,
+    all_jobs_q1.job_posted_date::DATE,
+    all_jobs_q1.salary_year_avg
+FROM (
+    SELECT *
+    FROM jobs_2023_jan
+    UNION ALL
+    SELECT *
+    FROM jobs_2023_feb
+    UNION ALL
+    SELECT *
+    FROM jobs_2023_mar
+) AS all_jobs_q1
+WHERE 
+    all_jobs_q1.salary_year_avg > 70000 
+    AND 
+    all_jobs_q1.job_title_short = 'Data Analyst'
+ORDER BY all_jobs_q1.salary_year_avg DESC;
+
+
+# Solution 2: Optimized derived table
+
+SELECT 
+    job_title_short,
+    job_location,
+    job_via,
+    job_posted_date::DATE,
+    salary_year_avg
+FROM (
+    SELECT job_title_short, job_location, job_via, job_posted_date, salary_year_avg
+    FROM jobs_2023_jan
+    WHERE salary_year_avg > 70000 AND job_title_short = 'Data Analyst'
+
+    UNION ALL
+
+    SELECT job_title_short, job_location, job_via, job_posted_date, salary_year_avg
+    FROM jobs_2023_feb
+    WHERE salary_year_avg > 70000 AND job_title_short = 'Data Analyst'
+
+    UNION ALL
+
+    SELECT job_title_short, job_location, job_via, job_posted_date, salary_year_avg
+    FROM jobs_2023_mar
+    WHERE salary_year_avg > 70000 AND job_title_short = 'Data Analyst'
+)
+ORDER BY salary_year_avg DESC;
+
+
+# Solution 3: CTE
+
+WITH all_jobs_q1 AS(
+    SELECT 
+        job_title_short, 
+        job_location, 
+        job_via, 
+        job_posted_date, 
+        salary_year_avg
+    FROM jobs_2023_jan
+    WHERE salary_year_avg > 70000
+
+    UNION ALL
+
+    SELECT 
+        job_title_short, 
+        job_location, 
+        job_via, 
+        job_posted_date, 
+        salary_year_avg
+    FROM jobs_2023_feb
+    WHERE salary_year_avg > 70000
+
+    UNION ALL
+
+    SELECT 
+        job_title_short, 
+        job_location, 
+        job_via, 
+        job_posted_date, 
+        salary_year_avg
+    FROM jobs_2023_mar
+    WHERE salary_year_avg > 70000
+)
+
+SELECT 
+    all_jobs_q1.job_title_short,
+    all_jobs_q1.job_location,
+    all_jobs_q1.job_via,
+    all_jobs_q1.job_posted_date::DATE,
+    CAST(all_jobs_q1.salary_year_avg AS INTEGER) AS salary_year_avg --truncating the decimal part
+FROM all_jobs_q1
+ORDER BY all_jobs_q1.salary_year_avg DESC;
